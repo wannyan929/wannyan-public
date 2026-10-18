@@ -16,7 +16,7 @@ if(!response.ok)throw new Error('HTTP '+response.status);
 const posts=await response.json();
 if(!Array.isArray(posts))throw new Error('Invalid data');
 root.replaceChildren();
-if(!posts.length){const p=document.createElement('p');p.className='empty';p.textContent='活動報告は準備中です。最初の任務記録をお楽しみに！';root.append(p);return;}
+if(!posts.length){const p=document.createElement('p');p.className='empty';p.textContent='活動報告は準備中です。任務が終わったら、写真と一緒に活動の様子をお届けします。';root.append(p);const a=document.createElement('a');a.href='./events.html';a.textContent='🗓️ これからの任務予定を見る →';root.append(a);return;}
 for(const post of posts){
 const article=document.createElement('article');article.className='post';
 const h=document.createElement('h2');h.textContent=post.title||'活動報告';article.append(h);
