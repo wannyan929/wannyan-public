@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>活動報告 | わんにゃん秘密結社</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#111a2b;color:#f5f2e9;font-family:system-ui,"Noto Sans JP",sans-serif;line-height:1.8}header,main,footer{max-width:860px;margin:auto;padding:24px}header{padding-top:55px}h1{font-size:clamp(1.8rem,5vw,2.8rem);margin:0}header p{color:#d6d1c5}a{color:#f2d594}.post{border:1px solid #526075;border-radius:14px;padding:clamp(16px,4vw,30px);margin:22px 0;background:#1a273a}.post h2{margin:0;font-size:1.45rem}.date{color:#b6c3d2;font-size:.9rem}.body{white-space:pre-wrap;overflow-wrap:anywhere}.photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin-top:18px}.photos img{width:100%;height:auto;max-height:420px;object-fit:contain;border-radius:10px;background:#101827}.empty{padding:35px 0;color:#d6d1c5}footer{font-size:.85rem;color:#b6c3d2}
+</style></head><body>
+<header><a href="./index.html">← 秘密基地へ戻る</a><h1>🐾 活動報告</h1><p>わんにゃん秘密結社の任務記録。動物と仲間を応援する活動をお届けします。</p></header>
+<main id="reports" aria-live="polite"><p class="empty">活動報告を読み込んでいます…</p></main>
+<footer>わんにゃん秘密結社 — 活動は、心の底から大まじめ。</footer>
+<script>
+(async()=>{
+const root=document.getElementById('reports');
+try{
+const response=await fetch('./activity.json',{cache:'no-store'});
+if(!response.ok)throw new Error('HTTP '+response.status);
+const posts=await response.json();
+if(!Array.isArray(posts))throw new Error('Invalid data');
+root.replaceChildren();
+if(!posts.length){const p=document.createElement('p');p.className='empty';p.textContent='活動報告は準備中です。最初の任務記録をお楽しみに！';root.append(p);return;}
+for(const post of posts){
+const article=document.createElement('article');article.className='post';
+const h=document.createElement('h2');h.textContent=post.title||'活動報告';article.append(h);
+if(post.date){const date=document.createElement('div');date.className='date';date.textContent=post.date;article.append(date);}
+const body=document.createElement('p');body.className='body';body.textContent=post.body||'';article.append(body);
+if(Array.isArray(post.images)&&post.images.length){
+const gallery=document.createElement('div');gallery.className='photos';
+for(const src of post.images.slice(0,3)){if(typeof src!=='string'||!src.startsWith('/')&&!src.startsWith('images/'))continue;
+const img=document.createElement('img');img.src=src.startsWith('/')?'.'+src:src;img.alt=(post.title||'活動報告')+'の写真';img.loading='lazy';gallery.append(img);}
+article.append(gallery);}
+root.append(article);
+}
+}catch(error){root.textContent='活動報告を読み込めませんでした。時間をおいて再度お試しください。';}
+})();
+</script></body></html>
