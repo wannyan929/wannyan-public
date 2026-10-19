@@ -4,6 +4,7 @@
 // GitHub OAuth callback: https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback
 const SITE = 'https://wannyan929.github.io';
 const REPO = 'wannyan929/wannyan-public';
+const ALLOWED_LOGIN = 'wannyan929';
 const WORKER_ORIGIN = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
 const encoder = new TextEncoder();
 function html(text, status=200) {
@@ -40,7 +41,7 @@ export default {
       return new Response(null,{status:302,headers:{'location':redirect.toString(),'cache-control':'no-store','set-cookie':`cms_oauth=${payload}.${sig}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`}});
     }
     if(url.pathname==='/callback' && request.method==='GET'){
-      const clear='cms_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0';
+      
       const raw=cookie(request,'cms_oauth'),parts=raw.split('.');
       if(parts.length!==3)return error('Missing OAuth state',403);
       const [state,ts,sig]=parts;
@@ -55,14 +56,18 @@ export default {
       const data=await exchange.json();
       if(!data.access_token)return error('GitHub did not return a token',403);
       const ghHeaders={'accept':'application/vnd.github+json','authorization':'Bearer '+data.access_token,'user-agent':'wannyan-cms-oauth'};
-      const [me,permission]=await Promise.all([
-        fetch('https://api.github.com/user',{headers:ghHeaders}),
-        fetch('https://api.github.com/repos/'+REPO+'/collaborators/'+encodeURIComponent('wannyan929')+'/permission',{headers:ghHeaders})
-      ]);
-      // IMPORTANT: this check currently only checks the repository owner's permissions,
-      // not the authenticated user's. Do not deploy until corrected and reviewed.
-      if(!me.ok||!permission.ok)return error('Permission verification failed',403);
+      const me=await fetch('https://api.github.com/user',{headers:ghHeaders});
+      if(!me.ok)return error('GitHub user lookup failed',403);
+      const user=await me.json();
+      if(typeof user.login!=='string'||user.login.toLowerCase()!==ALLOWED_LOGIN)return error('This account is not approved',403);
+      const permission=await fetch('https://api.github.com/repos/'+REPO+'/collaborators/'+encodeURIComponent(user.login)+'/permission',{headers:ghHeaders});
+      if(!permission.ok)return error('Repository permission lookup failed',403);
+      const access=await permission.json();
+      if(!['admin','write','maintain'].includes(access.permission))return error('Repository write access required',403);
+      // Intentionally fail closed. Decap's token handoff and origin validation
+      // require integration testing before this Worker may be deployed.
       return popupResult({status:'error',data:{message:'Authentication backend is not yet enabled'}});
+
     }
     return error('Not found',404);
   }
