@@ -53,7 +53,7 @@ export default {
       const raw=cookie(request,'cms_oauth'),parts=raw.split('.');
       if(parts.length!==3)return error('Missing OAuth state',403);
       const [state,ts,sig]=parts;
-      if(!/^\\d{13}$/.test(ts)||Date.now()-Number(ts)>600000||Number(ts)>Date.now()+30000)return error('OAuth state expired',403);
+      if(!/^\d{13}$/.test(ts)||Date.now()-Number(ts)>600000||Number(ts)>Date.now()+30000)return error('OAuth state expired',403);
       const expected=await hmac(env.STATE_SECRET,state+'.'+ts);
       if(!safeEq(expected,sig)||!safeEq(state,url.searchParams.get('state')||''))return error('OAuth state mismatch',403);
       if(url.searchParams.has('error'))return popupResult({status:'error',data:{message:'GitHub authorization was declined'}});
