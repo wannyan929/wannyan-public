@@ -1,5 +1,6 @@
 name: Sync CMS content to public pages
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
