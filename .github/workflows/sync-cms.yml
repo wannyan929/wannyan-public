@@ -1,0 +1,62 @@
+name: Sync CMS content to public pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cms-data/events.json'
+      - 'cms-data/reports.json'
+permissions:
+  contents: write
+concurrency:
+  group: cms-data-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate and export public JSON
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, datetime, re
+          for source, target, kind in [
+              ('cms-data/events.json','events.json','events'),
+              ('cms-data/reports.json','activity.json','reports'),
+          ]:
+              raw=json.loads(pathlib.Path(source).read_text(encoding='utf-8'))
+              if not isinstance(raw,dict) or not isinstance(raw.get('entries'),list):
+                  raise ValueError(source+': expected an entries list')
+              result=[]
+              for item in raw['entries']:
+                  if not isinstance(item,dict): raise ValueError('Invalid entry')
+                  date=item.get('date')
+                  title=item.get('title')
+                  if not isinstance(date,str) or datetime.date.fromisoformat(date).isoformat()!=date:
+                      raise ValueError('Invalid date')
+                  if not isinstance(title,str) or not title.strip(): raise ValueError('Invalid title')
+                  if kind=='events':
+                      result.append({k:item[k] for k in ('date','title','location','description','url') if isinstance(item.get(k),str)})
+                  else:
+                      body=item.get('body','')
+                      if not isinstance(body,str): raise ValueError('Invalid body')
+                      photos=item.get('images',[])
+                      if not isinstance(photos,list): raise ValueError('Invalid images')
+                      cleaned=[]
+                      for photo in photos:
+                          if not isinstance(photo,str) or not re.fullmatch(r'(?:images/)?[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|webp)',photo,re.I):
+                              raise ValueError('Invalid image path')
+                          cleaned.append(photo)
+                      result.append(dict(date=date,title=title,body=body,images=cleaned))
+              pathlib.Path(target).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Commit public JSON if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add events.json activity.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Sync public mission data from CMS"
+            git push
+          fi
