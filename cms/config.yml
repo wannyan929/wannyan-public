@@ -8,6 +8,7 @@ backend:
 locale: ja
 media_folder: "images"
 public_folder: "images"
+# CMS で選んだ写真の保存先は images/。公開ページも同じ相対パスを参照します。
 collections:
   - name: updates
     label: 秘密結社の更新
