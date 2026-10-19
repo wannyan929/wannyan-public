@@ -1,18 +1,22 @@
 name: Publish mission update
-run-name: Publish ${{ inputs.kind }} - ${{ inputs.title }}
+run-name: Publish mission update
 on:
   workflow_dispatch:
     inputs:
+      payload:
+        description: 'まとめてコピーした原稿をここに貼り付け（こちらを使う場合、下の欄は空でOK）'
+        required: false
+        type: string
       kind:
         description: '種類: event=任務予定 / report=活動報告'
-        required: true
+        required: false
         type: choice
         options:
           - event
           - report
       date:
         description: '日付 YYYY-MM-DD'
-        required: true
+        required: false
         type: string
       title:
         description: 'タイトル'
@@ -40,6 +44,7 @@ jobs:
           persist-credentials: true
       - name: Validate and add mission
         env:
+          INPUT_PAYLOAD: ${{ inputs.payload }}
           INPUT_KIND: ${{ inputs.kind }}
           INPUT_DATE: ${{ inputs.date }}
           INPUT_TITLE: ${{ inputs.title }}
@@ -48,11 +53,26 @@ jobs:
         run: |
           python3 - <<'PY'
           import os, json, datetime, pathlib
-          kind=os.environ['INPUT_KIND']
-          date=os.environ['INPUT_DATE'].strip()
-          title=os.environ['INPUT_TITLE'].strip()
-          location=os.environ['INPUT_LOCATION'].strip()
-          description=os.environ['INPUT_DESCRIPTION'].strip()
+          raw=os.environ.get('INPUT_PAYLOAD','').strip()
+          if raw:
+              payload=json.loads(raw)
+              if not isinstance(payload,dict): raise ValueError('Payload must be an object')
+              kind=payload.get('kind','')
+              date=payload.get('date','')
+              title=payload.get('title','')
+              location=payload.get('location','')
+              description=payload.get('description','')
+              if not all(isinstance(v,str) for v in (kind,date,title,location,description)): raise ValueError('Invalid payload values')
+          else:
+              kind=os.environ['INPUT_KIND']
+              date=os.environ['INPUT_DATE']
+              title=os.environ['INPUT_TITLE']
+              location=os.environ['INPUT_LOCATION']
+              description=os.environ['INPUT_DESCRIPTION']
+          date=date.strip()
+          title=title.strip()
+          location=location.strip()
+          description=description.strip()
           if kind not in ('event','report'): raise ValueError('Invalid type')
           if datetime.date.fromisoformat(date).isoformat()!=date: raise ValueError('Use YYYY-MM-DD')
           if not title or not description: raise ValueError('Title and content are required')
