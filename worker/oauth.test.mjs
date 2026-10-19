@@ -62,3 +62,18 @@ test('OAuth callback refuses missing state before any GitHub request', async () 
   const response = await worker.default.fetch(new Request('https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback?code=abc&state=abc'), env);
   assert.equal(response.status, 403);
 });
+
+test('OAuth callback rejects tampered and expired state cookies', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const base = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
+  const login = await worker.default.fetch(new Request(base + '/auth'), env);
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const state = new URL(login.headers.get('location')).searchParams.get('state');
+  const badState = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + '0'.repeat(64), { headers: { cookie } }), env);
+  assert.equal(badState.status, 403);
+  const pieces = cookie.split('=');
+  const tampered = pieces[0] + '=' + pieces.slice(1).join('=').slice(0, -1) + '0';
+  const badCookie = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie: tampered } }), env);
+  assert.equal(badCookie.status, 403);
+});
