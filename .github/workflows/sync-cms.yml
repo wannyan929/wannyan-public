@@ -54,9 +54,10 @@ jobs:
                       for photo in photos:
                           if not isinstance(photo,str) or not re.fullmatch(r'(?:images/)?[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|webp)',photo,re.I):
                               raise ValueError('Invalid image path')
-                          normalized=photo if photo.startswith('images/') else 'images/'+photo
-                          if not pathlib.Path(normalized).is_file():
-                              raise ValueError('Photo does not exist: '+normalized)
+                          candidates=[photo] if photo.startswith('images/') else ['images/'+photo,photo]
+                          normalized=next((path for path in candidates if pathlib.Path(path).is_file()),None)
+                          if normalized is None:
+                              raise ValueError('Photo does not exist: '+photo)
                           cleaned.append(normalized)
                       result.append(dict(date=date,title=title,body=body,images=cleaned))
               result.sort(key=lambda entry: entry['date'], reverse=True)
