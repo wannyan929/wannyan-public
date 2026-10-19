@@ -1,0 +1,46 @@
+# Decap CMS integration draft. Not active until secure OAuth proxy is configured.
+# Never put GitHub access tokens or OAuth secrets in this public repository.
+backend:
+  name: github
+  repo: wannyan929/wannyan-public
+  branch: main
+
+media_folder: images
+public_folder: images
+
+collections:
+  - name: site_data
+    label: 秘密結社の更新
+    files:
+      - name: events
+        label: 任務予定
+        file: events.json
+        format: json
+        fields:
+          - label: 任務予定一覧
+            name: entries
+            widget: list
+            required: false
+            fields:
+              - {label: 日付, name: date, widget: datetime, format: "YYYY-MM-DD", time_format: false}
+              - {label: タイトル, name: title, widget: string}
+              - {label: 場所, name: location, widget: string, required: false}
+              - {label: 内容, name: description, widget: text}
+      - name: reports
+        label: 活動報告
+        file: activity.json
+        format: json
+        fields:
+          - label: 活動報告一覧
+            name: entries
+            widget: list
+            required: false
+            fields:
+              - {label: 日付, name: date, widget: datetime, format: "YYYY-MM-DD", time_format: false}
+              - {label: タイトル, name: title, widget: string}
+              - {label: 内容, name: body, widget: text}
+              - label: 写真
+                name: images
+                widget: list
+                required: false
+                field: {label: 写真, name: image, widget: image}
