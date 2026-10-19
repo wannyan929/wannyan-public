@@ -5,8 +5,8 @@ backend:
   repo: wannyan929/wannyan-public
   branch: main
 locale: ja
-media_folder: ""
-public_folder: ""
+media_folder: "images"
+public_folder: "images"
 collections:
   - name: updates
     label: 秘密結社の更新
