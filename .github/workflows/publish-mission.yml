@@ -1,0 +1,78 @@
+name: Publish mission update
+run-name: Publish ${{ inputs.kind }} - ${{ inputs.title }}
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: '種類: event=任務予定 / report=活動報告'
+        required: true
+        type: choice
+        options:
+          - event
+          - report
+      date:
+        description: '日付 YYYY-MM-DD'
+        required: true
+        type: string
+      title:
+        description: 'タイトル'
+        required: true
+        type: string
+      location:
+        description: '場所'
+        required: false
+        type: string
+      description:
+        description: '内容'
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: mission-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate and add mission
+        env:
+          INPUT_KIND: ${{ inputs.kind }}
+          INPUT_DATE: ${{ inputs.date }}
+          INPUT_TITLE: ${{ inputs.title }}
+          INPUT_LOCATION: ${{ inputs.location }}
+          INPUT_DESCRIPTION: ${{ inputs.description }}
+        run: |
+          python3 - <<'PY'
+          import os, json, datetime, pathlib
+          kind=os.environ['INPUT_KIND']
+          date=os.environ['INPUT_DATE'].strip()
+          title=os.environ['INPUT_TITLE'].strip()
+          location=os.environ['INPUT_LOCATION'].strip()
+          description=os.environ['INPUT_DESCRIPTION'].strip()
+          if kind not in ('event','report'): raise ValueError('Invalid type')
+          if datetime.date.fromisoformat(date).isoformat()!=date: raise ValueError('Use YYYY-MM-DD')
+          if not title or not description: raise ValueError('Title and content are required')
+          if len(title)>150 or len(location)>200 or len(description)>3000: raise ValueError('Text is too long')
+          path=pathlib.Path('events.json' if kind=='event' else 'activity.json')
+          data=json.loads(path.read_text(encoding='utf-8'))
+          if not isinstance(data,list): raise ValueError('Expected a list')
+          if kind=='event':
+              item=dict(date=date,title=title,location=location,description=description)
+          else:
+              item=dict(date=date,title=title,body=(('場所：'+location+'\n') if location else '')+description,images=[])
+          if any(p.get('date')==date and p.get('title')==title for p in data):
+              raise ValueError('An item with the same date and title already exists')
+          data.insert(0,item)
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Commit and publish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add events.json activity.json
+          git commit -m "Publish mission from authenticated GitHub Actions"
+          git push
