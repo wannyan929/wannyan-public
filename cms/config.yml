@@ -1,26 +1,23 @@
-# わんにゃん秘密結社 管理室
-# GitHub OAuth の安全な認証バックエンド接続後に有効化します。
-# OAuth client secret / access token はこの公開リポジトリへ絶対に保存しません。
+# 編集用のデータは cms-data/ に置き、GitHub Actions が公開用 JSON に変換します。
+# 認証サーバーの接続が終わるまでログイン画面は公開しません。
 backend:
   name: github
   repo: wannyan929/wannyan-public
   branch: main
-
 locale: ja
-media_folder: images
-public_folder: /wannyan-public/images
-
+media_folder: ""
+public_folder: ""
 collections:
-  - name: site_data
+  - name: updates
     label: 秘密結社の更新
     files:
       - name: events
         label: 任務予定
-        file: events.json
+        file: cms-data/events.json
         format: json
         fields:
           - label: 任務予定一覧
-            name: root
+            name: entries
             widget: list
             required: false
             fields:
@@ -31,11 +28,11 @@ collections:
               - {label: 主催者URL, name: url, widget: string, required: false}
       - name: reports
         label: 活動報告
-        file: activity.json
+        file: cms-data/reports.json
         format: json
         fields:
           - label: 活動報告一覧
-            name: root
+            name: entries
             widget: list
             required: false
             fields:
