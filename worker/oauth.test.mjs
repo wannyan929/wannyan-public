@@ -1,6 +1,8 @@
 // Automated smoke tests for the Cloudflare OAuth draft.
 // Run: node --test worker/oauth.test.mjs
 import { readFileSync } from 'node:fs';
+import { webcrypto } from 'node:crypto';
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 import assert from 'node:assert/strict';
 import test from 'node:test';
 const code=readFileSync(new URL('./oauth-draft.js',import.meta.url),'utf8');
