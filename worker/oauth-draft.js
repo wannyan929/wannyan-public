@@ -29,14 +29,14 @@ export default {
     const url=new URL(request.url);
     if(url.origin!==WORKER_ORIGIN)return error('Invalid host',403);
     if(!env.GITHUB_CLIENT_ID||!env.GITHUB_CLIENT_SECRET||!env.STATE_SECRET||env.STATE_SECRET.length<32)return error('Worker secrets are not configured',503);
-    if(url.pathname==='/health')return new Response('configured',{headers:{'cache-control':'no-store'}});
+    if(url.pathname==='/health')return new Response('online',{headers:{'cache-control':'no-store'}});
     if(url.pathname==='/auth' && request.method==='GET'){
       const state=randomHex(),ts=Date.now().toString(),payload=state+'.'+ts;
       const sig=await hmac(env.STATE_SECRET,payload);
       const redirect=new URL('https://github.com/login/oauth/authorize');
       redirect.searchParams.set('client_id',env.GITHUB_CLIENT_ID);
       redirect.searchParams.set('redirect_uri',WORKER_ORIGIN+'/callback');
-      redirect.searchParams.set('scope','repo');
+      redirect.searchParams.set('scope','public_repo');
       redirect.searchParams.set('state',state);
       return new Response(null,{status:302,headers:{'location':redirect.toString(),'cache-control':'no-store','set-cookie':`cms_oauth=${payload}.${sig}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`}});
     }
@@ -45,7 +45,7 @@ export default {
       const raw=cookie(request,'cms_oauth'),parts=raw.split('.');
       if(parts.length!==3)return error('Missing OAuth state',403);
       const [state,ts,sig]=parts;
-      if(!/^\\d{13}$/.test(ts)||Math.abs(Date.now()-Number(ts))>600000)return error('OAuth state expired',403);
+      if(!/^\\d{13}$/.test(ts)||Date.now()-Number(ts)>600000||Number(ts)>Date.now()+30000)return error('OAuth state expired',403);
       const expected=await hmac(env.STATE_SECRET,state+'.'+ts);
       if(!safeEq(expected,sig)||!safeEq(state,url.searchParams.get('state')||''))return error('OAuth state mismatch',403);
       if(url.searchParams.has('error'))return popupResult({status:'error',data:{message:'GitHub authorization was declined'}});
