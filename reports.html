@@ -24,7 +24,7 @@ if(post.date){const date=document.createElement('div');date.className='date';dat
 const body=document.createElement('p');body.className='body';body.textContent=post.body||'';article.append(body);
 if(Array.isArray(post.images)&&post.images.length){
 const gallery=document.createElement('div');gallery.className='photos';
-for(const src of post.images.slice(0,3)){if(typeof src!=='string'||!src.startsWith('/')&&!src.startsWith('images/'))continue;
+for(const src of post.images.slice(0,3)){if(typeof src!=='string'||!(/^(?:images\/)?[a-zA-Z0-9_.-]+\.(?:jpe?g|png|webp)$/i.test(src)))continue;
 const img=document.createElement('img');img.src=src.startsWith('/')?'.'+src:src;img.alt=(post.title||'活動報告')+'の写真';img.loading='lazy';gallery.append(img);}
 article.append(gallery);}
 root.append(article);
