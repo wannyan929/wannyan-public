@@ -47,4 +47,4 @@ collections:
                 required: false
                 min: 0
                 max: 12
-                field: {label: 写真, name: image, widget: image, media_folder: /images, public_folder: /images}
+                field: {label: 写真, name: image, widget: image}
