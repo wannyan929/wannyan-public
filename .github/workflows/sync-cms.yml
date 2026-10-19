@@ -43,7 +43,7 @@ jobs:
                       body=item.get('body','')
                       if not isinstance(body,str): raise ValueError('Invalid body')
                       photos=item.get('images',[])
-                      if not isinstance(photos,list): raise ValueError('Invalid images')
+                      if not isinstance(photos,list) or len(photos)>12: raise ValueError('Invalid images: maximum 12 photos')
                       cleaned=[]
                       for photo in photos:
                           if not isinstance(photo,str) or not re.fullmatch(r'(?:images/)?[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|webp)',photo,re.I):
