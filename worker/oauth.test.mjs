@@ -106,3 +106,50 @@ test('OAuth draft never releases a token even for a valid approved GitHub accoun
     globalThis.fetch = oldFetch;
   }
 });
+
+test('OAuth rejects an unapproved GitHub account without revealing its token', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const base = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
+  const login = await worker.default.fetch(new Request(base + '/auth'), env);
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const state = new URL(login.headers.get('location')).searchParams.get('state');
+  const oldFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (url) => {
+    calls++;
+    if (String(url).includes('access_token')) return Response.json({ access_token: 'mock-token-not-for-browser' });
+    if (String(url).endsWith('/user')) return Response.json({ login: 'unapproved-account' });
+    throw new Error('No repository check should occur for unapproved users');
+  };
+  try {
+    const response = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie } }), env);
+    assert.equal(response.status, 403);
+    assert.doesNotMatch(await response.text(), /mock-token-not-for-browser/);
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = oldFetch;
+  }
+});
+test('OAuth rejects read-only GitHub permissions', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const base = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
+  const login = await worker.default.fetch(new Request(base + '/auth'), env);
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const state = new URL(login.headers.get('location')).searchParams.get('state');
+  const oldFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('access_token')) return Response.json({ access_token: 'mock-readonly-token' });
+    if (String(url).endsWith('/user')) return Response.json({ login: 'wannyan929' });
+    if (String(url).includes('/permission')) return Response.json({ permission: 'read' });
+    throw new Error('Unexpected request');
+  };
+  try {
+    const response = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie } }), env);
+    assert.equal(response.status, 403);
+    assert.doesNotMatch(await response.text(), /mock-readonly-token/);
+  } finally {
+    globalThis.fetch = oldFetch;
+  }
+});
