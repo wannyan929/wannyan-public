@@ -78,3 +78,31 @@ test('OAuth callback rejects tampered and expired state cookies', async () => {
   const badCookie = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie: tampered } }), env);
   assert.equal(badCookie.status, 403);
 });
+
+test('OAuth draft never releases a token even for a valid approved GitHub account', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const base = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
+  const login = await worker.default.fetch(new Request(base + '/auth'), env);
+  const cookie = login.headers.get('set-cookie').split(';')[0];
+  const state = new URL(login.headers.get('location')).searchParams.get('state');
+  const oldFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url) => {
+    requests.push(String(url));
+    if (String(url).includes('access_token')) return Response.json({ access_token: 'mock-secret-token' });
+    if (String(url).endsWith('/user')) return Response.json({ login: 'wannyan929' });
+    if (String(url).includes('/permission')) return Response.json({ permission: 'admin' });
+    throw new Error('Unexpected network call');
+  };
+  try {
+    const response = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie } }), env);
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.match(body, /Authentication backend is not yet enabled/);
+    assert.doesNotMatch(body, /mock-secret-token/);
+    assert.equal(requests.length, 3);
+  } finally {
+    globalThis.fetch = oldFetch;
+  }
+});
