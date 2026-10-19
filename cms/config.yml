@@ -4,6 +4,7 @@ backend:
   name: github
   repo: wannyan929/wannyan-public
   branch: main
+  # auth_endpoint は安全な OAuth 仲介 Worker の動作確認後に設定する。
 locale: ja
 media_folder: "images"
 public_folder: "images"
@@ -43,4 +44,6 @@ collections:
                 name: images
                 widget: list
                 required: false
+                min: 0
+                max: 12
                 field: {label: 写真, name: image, widget: image}
