@@ -50,6 +50,7 @@ jobs:
                               raise ValueError('Invalid image path')
                           cleaned.append(photo)
                       result.append(dict(date=date,title=title,body=body,images=cleaned))
+              result.sort(key=lambda entry: entry['date'], reverse=True)
               pathlib.Path(target).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           PY
       - name: Commit public JSON if changed
