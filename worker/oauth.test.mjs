@@ -9,7 +9,7 @@ test('OAuth uses public repository scope only',()=>{
   assert.doesNotMatch(code,/searchParams\.set\('scope','repo'\)/);
 });
 test('State has 13-digit timestamp and ten-minute expiry',()=>{
-  assert.match(code,/\^\\d\{13\}\$/);
+  assert.ok(code.includes(String.raw`/^\d{13}$/`));
   assert.match(code,/600000/);
   assert.match(code,/STATE_SECRET/);
 });
