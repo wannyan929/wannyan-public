@@ -73,7 +73,8 @@ test('OAuth callback rejects tampered and expired state cookies', async () => {
   const badState = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + '0'.repeat(64), { headers: { cookie } }), env);
   assert.equal(badState.status, 403);
   const pieces = cookie.split('=');
-  const tampered = pieces[0] + '=' + pieces.slice(1).join('=').slice(0, -1) + '0';
+  const original = pieces.slice(1).join('=');
+  const tampered = pieces[0] + '=' + original.slice(0, -1) + (original.endsWith('0') ? '1' : '0');
   const badCookie = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie: tampered } }), env);
   assert.equal(badCookie.status, 403);
 });
