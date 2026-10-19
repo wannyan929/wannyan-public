@@ -20,8 +20,16 @@ function popupResult(payload){
   const json=JSON.stringify(payload).replace(/</g,'\\u003c');
   return html(`<!doctype html><html lang="ja"><meta charset="utf-8"><title>認証結果</title><body><p>認証処理を完了しました。このウィンドウは閉じられます。</p><script>
   const payload=${json};
-  if(window.opener){window.opener.postMessage('authorization:github:'+payload.status+':'+JSON.stringify(payload.data),${JSON.stringify(SITE)});}
-  window.close();
+  const target=${JSON.stringify(SITE)};
+  if (!window.opener) { document.body.textContent='管理室からログインを開始してください。'; }
+  else {
+    window.addEventListener('message',event=>{
+      if(event.origin!==target || event.source!==window.opener || event.data!=='authorization:github')return;
+      window.opener.postMessage('authorization:github:'+payload.status+':'+JSON.stringify(payload.data),target);
+      window.close();
+    });
+    window.opener.postMessage('authorizing:github',target);
+  }
   </script></body></html>`);
 }
 export default {
