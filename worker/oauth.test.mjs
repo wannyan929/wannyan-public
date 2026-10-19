@@ -27,3 +27,36 @@ test('Draft must not enable successful login before integration tests',()=>{
   assert.match(code,/Authentication backend is not yet enabled/);
   assert.doesNotMatch(code,/status:'success'/);
 });
+
+test('Unauthenticated Worker refuses to start OAuth', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const response = await worker.default.fetch(
+    new Request('https://noisy-voice-54f9.ryo-f-0924.workers.dev/auth'),
+    {}
+  );
+  assert.equal(response.status, 503);
+});
+test('Worker rejects unexpected hosts', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const response = await worker.default.fetch(new Request('https://example.com/auth'), {});
+  assert.equal(response.status, 403);
+});
+test('OAuth starts with signed cookie, public_repo scope and exact callback', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const response = await worker.default.fetch(new Request('https://noisy-voice-54f9.ryo-f-0924.workers.dev/auth'), env);
+  assert.equal(response.status, 302);
+  const redirect = new URL(response.headers.get('location'));
+  assert.equal(redirect.hostname, 'github.com');
+  assert.equal(redirect.searchParams.get('scope'), 'public_repo');
+  assert.equal(redirect.searchParams.get('redirect_uri'), 'https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback');
+  assert.equal(redirect.searchParams.get('client_id'), 'test-client');
+  assert.match(response.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Lax/);
+  assert.equal(redirect.searchParams.get('state').length, 64);
+});
+test('OAuth callback refuses missing state before any GitHub request', async () => {
+  const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
+  const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
+  const response = await worker.default.fetch(new Request('https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback?code=abc&state=abc'), env);
+  assert.equal(response.status, 403);
+});
