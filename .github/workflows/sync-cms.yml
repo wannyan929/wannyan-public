@@ -38,6 +38,12 @@ jobs:
                       raise ValueError('Invalid date')
                   if not isinstance(title,str) or not title.strip(): raise ValueError('Invalid title')
                   if kind=='events':
+                      for field in ('location','description','url'):
+                          if field in item and not isinstance(item[field],str):
+                              raise ValueError('Invalid event field: '+field)
+                      url=item.get('url','')
+                      if url and not re.fullmatch(r'https?://[^\\s<>]+',url):
+                          raise ValueError('Event URL must be http(s)')
                       result.append({k:item[k] for k in ('date','title','location','description','url') if isinstance(item.get(k),str)})
                   else:
                       body=item.get('body','')
