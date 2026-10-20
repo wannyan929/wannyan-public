@@ -74,9 +74,9 @@ export default {
       if(!permission.ok)return error('Repository permission lookup failed',403);
       const access=await permission.json();
       if(!['admin','write','maintain'].includes(access.permission))return error('Repository write access required',403);
-      // Intentionally fail closed. Decap's token handoff and origin validation
-      // require integration testing before this Worker may be deployed.
-      return popupResult({status:'error',data:{message:'Authentication backend is not yet enabled'}});
+      // Return the short-lived OAuth token only to the verified CMS opener.
+      // Keep this Worker undeployed until browser integration tests pass.
+      return popupResult({status:'success',data:{token:data.access_token,provider:'github'}});
 
     }
     return error('Not found',404);
