@@ -18,7 +18,7 @@ function randomHex(){return hex(crypto.getRandomValues(new Uint8Array(32)))}
 function cookie(request,name){return (request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.slice(name.length+1)||''}
 function popupResult(payload){
   const json=JSON.stringify(payload).replace(/</g,'\\u003c');
-  return html(`<!doctype html><html lang="ja"><meta charset="utf-8"><title>認証結果</title><body><p>認証処理を完了しました。このウィンドウは閉じられます。</p><script>
+  const response=html(`<!doctype html><html lang="ja"><meta charset="utf-8"><title>認証結果</title><body><p>認証処理を完了しました。このウィンドウは閉じられます。</p><script>
   const payload=${json};
   const target=${JSON.stringify(SITE)};
   if (!window.opener) { document.body.textContent='管理室からログインを開始してください。'; }
@@ -31,6 +31,8 @@ function popupResult(payload){
     window.opener.postMessage('authorizing:github',target);
   }
   </script></body></html>`);
+  response.headers.set('set-cookie','cms_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
+  return response;
 }
 export default {
   async fetch(request,env){
