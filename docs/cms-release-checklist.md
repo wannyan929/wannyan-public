@@ -31,3 +31,27 @@
 ## 操作を依頼する前に
 
 画面を何度も行き来する負担を避けるため、GitHub OAuth App 登録・Cloudflare の Secret 登録・Worker 更新に必要な項目をまとめて案内する。必要な値は本人の画面で入力してもらい、秘密情報は見せてもらわない。
+
+## GitHub OAuth App 登録時の入力項目（作業者用）
+
+GitHub の Settings → Developer settings → OAuth Apps → New OAuth App で次を入力する。
+
+| 項目 | 入力値 |
+| --- | --- |
+| Application name | Wannyan CMS |
+| Homepage URL | https://wannyan929.github.io/wannyan-public/ |
+| Authorization callback URL | https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback |
+| Application description | わんにゃん秘密結社の投稿管理室 |
+
+登録後に表示される Client ID は Cloudflare Worker の `GITHUB_CLIENT_ID` に登録する。Client Secret は GitHub 側で生成し、**画面から直接 Cloudflare の Secret 欄へ**入力する。ここには貼らない。
+
+Cloudflare の `noisy-voice-54f9` → Settings → Variables and Secrets に次を登録する。
+
+| 名前 | 保存形式 | 値 |
+| --- | --- | --- |
+| GITHUB_CLIENT_ID | Text または Secret | GitHub OAuth App の Client ID |
+| GITHUB_CLIENT_SECRET | **Secret** | GitHub OAuth App の Client Secret |
+| STATE_SECRET | **Secret** | 32文字以上の安全な乱数 |
+
+**注意:** Worker のコード更新・Secret 設定・GitHub OAuth App の登録は別々の操作。設定値を登録しただけでは管理室は完成しない。OAuth の実機テストと CMS の切り替えが必要。
+
