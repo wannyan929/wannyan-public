@@ -52,6 +52,8 @@ jobs:
                       if not isinstance(photos,list) or len(photos)>12: raise ValueError('Invalid images: maximum 12 photos')
                       cleaned=[]
                       for photo in photos:
+                          if isinstance(photo,dict) and set(photo)=={'image'}:
+                              photo=photo['image']
                           if not isinstance(photo,str) or not re.fullmatch(r'(?:images/)?[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|webp)',photo,re.I):
                               raise ValueError('Invalid image path')
                           candidates=[photo] if photo.startswith('images/') else ['images/'+photo,photo]
