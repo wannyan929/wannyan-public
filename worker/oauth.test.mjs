@@ -100,6 +100,7 @@ test('OAuth draft never releases a token even for a valid approved GitHub accoun
     assert.equal(response.status, 200);
     const body = await response.text();
     assert.match(body, /Authentication backend is not yet enabled/);
+    assert.match(response.headers.get('set-cookie') || '', /cms_oauth=;.*Max-Age=0/);
     assert.doesNotMatch(body, /mock-secret-token/);
     assert.equal(requests.length, 3);
   } finally {
