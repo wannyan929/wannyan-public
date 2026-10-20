@@ -4,7 +4,8 @@ backend:
   name: github
   repo: wannyan929/wannyan-public
   branch: main
-  # auth_endpoint は安全な OAuth 仲介 Worker の動作確認後に設定する。
+  # Worker が本番デプロイされるまで CMS 画面は準備中のままです。
+  auth_endpoint: https://noisy-voice-54f9.ryo-f-0924.workers.dev/auth
 locale: ja
 media_folder: "images"
 public_folder: "images"
