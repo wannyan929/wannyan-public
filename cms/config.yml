@@ -22,6 +22,8 @@ collections:
             name: entries
             widget: list
             required: false
+            summary: '{{fields.date}}｜{{fields.title}}'
+            collapsed: true
             fields:
               - {label: 日付, name: date, widget: datetime, format: "YYYY-MM-DD", time_format: false}
               - {label: タイトル, name: title, widget: string}
@@ -37,6 +39,8 @@ collections:
             name: entries
             widget: list
             required: false
+            summary: '{{fields.date}}｜{{fields.title}}'
+            collapsed: true
             fields:
               - {label: 日付, name: date, widget: datetime, format: "YYYY-MM-DD", time_format: false}
               - {label: タイトル, name: title, widget: string}
