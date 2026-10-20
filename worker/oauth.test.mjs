@@ -25,9 +25,9 @@ test('Popup requires handshake with known CMS origin',()=>{
   assert.match(code,/event\.source!==window\.opener/);
   assert.match(code,/authorizing:github/);
 });
-test('Draft must not enable successful login before integration tests',()=>{
-  assert.match(code,/Authentication backend is not yet enabled/);
-  assert.doesNotMatch(code,/status:'success'/);
+test('Approved login uses Decap CMS success response',()=>{
+  assert.match(code,/status:'success'/);
+  assert.match(code,/provider:'github'/);
 });
 
 test('Unauthenticated Worker refuses to start OAuth', async () => {
@@ -79,7 +79,7 @@ test('OAuth callback rejects tampered and expired state cookies', async () => {
   assert.equal(badCookie.status, 403);
 });
 
-test('OAuth draft never releases a token even for a valid approved GitHub account', async () => {
+test('OAuth returns token only in approved-user callback page', async () => {
   const worker = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
   const env = { GITHUB_CLIENT_ID:'test-client', GITHUB_CLIENT_SECRET:'test-secret', STATE_SECRET:'0123456789abcdef0123456789abcdef' };
   const base = 'https://noisy-voice-54f9.ryo-f-0924.workers.dev';
@@ -99,9 +99,9 @@ test('OAuth draft never releases a token even for a valid approved GitHub accoun
     const response = await worker.default.fetch(new Request(base + '/callback?code=demo&state=' + state, { headers: { cookie } }), env);
     assert.equal(response.status, 200);
     const body = await response.text();
-    assert.match(body, /Authentication backend is not yet enabled/);
+    assert.match(body, /mock-secret-token/);
+    assert.match(body, /success/);
     assert.match(response.headers.get('set-cookie') || '', /cms_oauth=;.*Max-Age=0/);
-    assert.doesNotMatch(body, /mock-secret-token/);
     assert.equal(requests.length, 3);
   } finally {
     globalThis.fetch = oldFetch;
