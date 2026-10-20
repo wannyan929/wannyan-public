@@ -65,6 +65,7 @@ export default {
       if(!exchange.ok)return error('Token exchange failed',502);
       const data=await exchange.json();
       if(!data.access_token)return error('GitHub did not return a token',403);
+      if(typeof data.access_token!=='string'||!/^gh[ou]_[A-Za-z0-9_]+$/.test(data.access_token))return error('Unexpected GitHub token format',502);
       const ghHeaders={'accept':'application/vnd.github+json','authorization':'Bearer '+data.access_token,'user-agent':'wannyan-cms-oauth'};
       const me=await fetch('https://api.github.com/user',{headers:ghHeaders});
       if(!me.ok)return error('GitHub user lookup failed',403);
