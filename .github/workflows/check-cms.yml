@@ -1,0 +1,52 @@
+name: Check CMS content
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cms-data/**'
+      - 'cms/config.yml'
+      - '.github/workflows/check-cms.yml'
+      - '.github/workflows/sync-cms.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate CMS JSON and image references
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import json
+          import pathlib
+          import re
+          root = pathlib.Path('.')
+          for name in ('events', 'reports'):
+              data = json.loads((root / 'cms-data' / (name + '.json')).read_text(encoding='utf-8'))
+              assert isinstance(data, dict) and isinstance(data.get('entries'), list), name
+              for item in data['entries']:
+                  assert isinstance(item, dict), name
+                  assert isinstance(item.get('title'), str) and item['title'].strip(), name
+                  datetime.date.fromisoformat(item['date'])
+                  if name == 'reports':
+                      assert isinstance(item.get('body', ''), str)
+                      photos = item.get('images', [])
+                      assert isinstance(photos, list) and len(photos) <= 12
+                      for photo in photos:
+                          if isinstance(photo, dict):
+                              assert set(photo) == {'image'}
+                              photo = photo['image']
+                          assert isinstance(photo, str)
+                          assert re.fullmatch(r'(?:images/)?[A-Za-z0-9_.-]+\.(?:jpg|jpeg|png|webp)', photo, re.I), photo
+                          paths = [photo] if photo.startswith('images/') else ['images/' + photo, photo]
+                          assert any((root / path).is_file() for path in paths), photo
+                  else:
+                      assert isinstance(item.get('description', ''), str)
+                      assert isinstance(item.get('location', ''), str)
+                      url = item.get('url', '')
+                      assert isinstance(url, str)
+                      assert not url or re.fullmatch(r'https?://[^\s<>]+', url), url
+              print(f'{name}: {len(data["entries"])} entries OK')
+          PY
