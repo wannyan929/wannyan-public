@@ -14,7 +14,7 @@
 
 ## 公開前に必須
 
-1. `worker/oauth-draft.js` は現在、成功時にも認証を拒否する安全側の下書き。完成版として貼り付けない。
+1. `worker/oauth-draft.js` には許可ユーザー向けの Decap CMS 認証結果引き渡しを実装済み。ただし実行テスト・ブラウザ結合テストは未確認なので、まだ Cloudflare に貼り付けない。
 2. 認証結果の引き渡し、利用者の権限確認、CSRF・期限切れの確認を含む認証処理を完成させる。
 3. `worker/oauth.test.mjs` のテストを実行し、成功結果を確認する。
 4. GitHub OAuth App を本人のアカウントで作成する。コールバックURLは `https://noisy-voice-54f9.ryo-f-0924.workers.dev/callback`。
