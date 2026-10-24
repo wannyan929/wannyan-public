@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://wannyan929.github.io/wannyan-public/sitemap.xml
